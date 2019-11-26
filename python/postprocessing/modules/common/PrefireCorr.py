@@ -8,8 +8,19 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collect
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 
 class PrefCorr(Module):
-    def __init__(self, jetroot="L1prefiring_jetpt_2017BtoF.root", jetmapname="L1prefiring_jetpt_2017BtoF",
-                 photonroot="L1prefiring_photonpt_2017BtoF.root", photonmapname="L1prefiring_photonpt_2017BtoF"):
+    def __init__(self, **kwargs):
+        
+        self.year           = kwargs.get('year')
+        if self.year == '2016':
+            jetroot="L1prefiring_jetpt_2016BtoH.root"
+            jetmapname="L1prefiring_jetpt_2016BtoH"
+            photonroot="L1prefiring_photonpt_2016BtoH.root"
+            photonmapname="L1prefiring_photonpt_2016BtoH"
+        else:
+            jetroot="L1prefiring_jetpt_2017BtoF.root"
+            jetmapname="L1prefiring_jetpt_2017BtoF"
+            photonroot="L1prefiring_photonpt_2017BtoF.root"
+            photonmapname="L1prefiring_photonpt_2017BtoF"
 
         cmssw_base = os.getenv('CMSSW_BASE')
 
@@ -48,7 +59,8 @@ class PrefCorr(Module):
 
     def analyze(self, event):
         """process event, return True (go to next module) or False (fail, go to next event)"""
-
+        if self.year=='2018':
+            return True
         jets = Collection(event,"Jet")
 
         # Options
