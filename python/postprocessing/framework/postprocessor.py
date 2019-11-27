@@ -155,7 +155,8 @@ class PostProcessor :
 
 	    # prepare output file
             if not self.noOut:
-                outFileName = os.path.join(self.outputDir, os.path.basename(fname).replace(".root",outpostfix+".root"))
+                #outFileName = os.path.join(self.outputDir, os.path.basename(fname).replace(".root",outpostfix+".root"))
+		outFileName = os.path.join(self.outputDir, os.path.basename(fname))
                 outFile = ROOT.TFile.Open(outFileName, "RECREATE", "", compressionLevel)
                 outFileNames.append(outFileName)
                 if compressionLevel: 
