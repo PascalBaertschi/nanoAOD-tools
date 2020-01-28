@@ -3,16 +3,14 @@ import os, sys
 import subprocess
 
 from PhysicsTools.NanoAODTools.postprocessing.modules.jme.jetmetUncertainties import *
-from PhysicsTools.NanoAODTools.postprocessing.modules.jme.fatJetUncertainties import *
+from PhysicsTools.NanoAODTools.postprocessing.modules.jme.jetRecalib import *
 
 # JEC dict
 jecTagsMC = {'2016' : 'Summer16_07Aug2017_V11_MC', 
              '2017' : 'Fall17_17Nov2017_V32_MC', 
              '2018' : 'Autumn18_V19_MC'}
 
-jecTagsFastSim = {'2016' : 'Spring16_25nsFastSimV1_MC',
-                  '2017' : 'Fall17_FastSimV1_MC',
-                  '2018' : 'Autumn18_FastSimV1_MC'}
+
 
 archiveTagsDATA = {'2016' : 'Summer16_07Aug2017_V11_DATA', 
                    '2017' : 'Fall17_17Nov2017_V32_DATA', 
@@ -46,7 +44,7 @@ jerTagsMC = {'2016' : 'Summer16_25nsV1_MC',
 #nominal, up, down
 jmrValues = {'2016' : [1.0, 1.2, 0.8],
              '2017' : [1.09, 1.14, 1.04],
-             '2018' : [1.09, 1.14, 1.04]        # Use 2017 values for 2018 until 2018 are released
+             '2018' : [1.24, 1.20, 1.28] 
             }
 
 #jet mass scale
@@ -54,19 +52,12 @@ jmrValues = {'2016' : [1.0, 1.2, 0.8],
 #2016 values 
 jmsValues = { '2016' : [1.00, 0.9906, 1.0094], #nominal, down, up
               '2017' : [0.982, 0.978, 0.986],
-              '2018' : [0.982, 0.978, 0.986] # Use 2017 values for 2018 until 2018 are released
+              '2018' : [0.997, 0.993, 1.001] 
             }
 
-def createJMECorrector(isMC=True, dataYear=2016, runPeriod="B", jesUncert="Total", redojec=False, jetType = "AK4PFchs", noGroom=False, metBranchName="MET", applySmearing=True, isFastSim=False):
+def createJMECorrector(isMC=True, dataYear=2016, runPeriod="B", jesUncert="Total", redojec=False, jetType = "AK4PFchs", noGroom=False):
     
-    dataYear = str(dataYear)
-
-    if isMC and not isFastSim:
-        jecTag_ = jecTagsMC[dataYear]
-    elif isMC and isFastSim:
-        jecTag_ = jecTagsFastSim[dataYear]
-    else:
-        jecTag_ = jecTagsDATA[dataYear + runPeriod]
+    jecTag_ = jecTagsMC[dataYear] if isMC else jecTagsDATA[dataYear + runPeriod]
 
     jmeUncert_ = [x for x in jesUncert.split(",")]
 
@@ -76,28 +67,14 @@ def createJMECorrector(isMC=True, dataYear=2016, runPeriod="B", jesUncert="Total
 
     jmsValues_ = jmsValues[dataYear]
 
-    archiveTag_ = archiveTagsDATA[dataYear]
-  
-    met_ = metBranchName
-    
     print 'JEC=', jecTag_, '\t JER=', jerTag_
-    print 'MET branch=', met_
 
     jmeCorrections = None
     #jme corrections
-
-    if 'AK4' in jetType:
-      if isMC:
-          jmeCorrections = lambda : jetmetUncertaintiesProducer(era=dataYear,                      globalTag=jecTag_, jesUncertainties=jmeUncert_, jerTag=jerTag_, jetType = jetType, metBranchName=met_, applySmearing = applySmearing)
-      else:
-          jmeCorrections = lambda : jetmetUncertaintiesProducer(era=dataYear, archive=archiveTag_, globalTag=jecTag_, jesUncertainties=jmeUncert_, jerTag=jerTag_, jetType = jetType, metBranchName=met_, isData=True)
-    # no MET variations calculated
+    if isMC:
+        jmeCorrections = lambda : jetmetUncertaintiesProducer(era=dataYear, globalTag=jecTag_, jesUncertainties=jmeUncert_, redoJEC=redojec, jerTag=jerTag_, jetType = jetType, noGroom = noGroom, jmrVals = jmrValues_, jmsVals = jmsValues_)
     else:
-      if isMC:
-          jmeCorrections = lambda : fatJetUncertaintiesProducer(era=dataYear,                      globalTag=jecTag_, jesUncertainties=jmeUncert_, redoJEC=redojec, jetType = jetType, jerTag=jerTag_, jmrVals = jmrValues_, jmsVals = jmsValues_, applySmearing = applySmearing)
-      else:
-          jmeCorrections = lambda : fatJetUncertaintiesProducer(era=dataYear, archive=archiveTag_, globalTag=jecTag_, jesUncertainties=jmeUncert_, redoJEC=redojec, jetType = jetType, jerTag=jerTag_, jmrVals = jmrValues_, jmsVals = jmsValues_, isData=True)
-
+        jmeCorrections = lambda : jetRecalib(globalTag=jecTag_, archive=archiveTagsDATA[dataYear], jetType=jetType, redoJEC=redojec)
     return jmeCorrections
 
 
